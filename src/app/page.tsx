@@ -1,6 +1,15 @@
-import TategakiRenderer from "../components/TategakiRenderer";
+"use client";
+
+import dynamic from "next/dynamic";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
+
+const TategakiRenderer = dynamic(
+  () => Promise.resolve(import("../components/TategakiRenderer")),
+  {
+    ssr: false,
+  },
+);
 
 export default function Home() {
   return (

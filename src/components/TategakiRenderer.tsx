@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
-import { Stage, Text, Container } from "@pixi/react";
-import * as PIXI from "pixi.js";
+import { useEffect, useState } from "react";
+import { Stage, Container, Text } from "@pixi/react";
+import { Application, TextStyle } from "pixi.js";
 import {
   Select,
   SelectContent,
@@ -67,7 +67,7 @@ export default function TategakiRenderer() {
   const [font, setFont] = useState("Noto Sans JP");
   const [fontSize, setFontSize] = useState(24);
   const [charsPerLine, setCharsPerLine] = useState(15);
-  const [app, setApp] = useState<PIXI.Application | null>(null);
+  const [app, setApp] = useState<Application | null>(null);
 
   useEffect(() => {
     const input = document.getElementById("text-input") as HTMLTextAreaElement;
@@ -92,7 +92,7 @@ export default function TategakiRenderer() {
   }, [text, charsPerLine]);
 
   const [fontStyle, setFontStyle] = useState(
-    new PIXI.TextStyle({
+    new TextStyle({
       fontFamily: font,
       fontSize: fontSize,
       fill: "#000000",
@@ -102,7 +102,7 @@ export default function TategakiRenderer() {
 
   useEffect(() => {
     setFontStyle(
-      new PIXI.TextStyle({
+      new TextStyle({
         fontFamily: font,
         fontSize: fontSize,
         fill: "#000000",
@@ -182,7 +182,7 @@ export default function TategakiRenderer() {
         width={400}
         height={400}
         options={{ backgroundColor: 0xffffff }}
-        onMount={setApp}
+        onMount={(app) => setApp(app)}
       >
         <Container>
           {lines.map((line, lineIndex) => (
