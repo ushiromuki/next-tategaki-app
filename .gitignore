@@ -42,3 +42,10 @@ next-env.d.ts
 
 # pnpm
 .pnpm-store
+
+# Playwright
+node_modules/
+/test-results/
+/playwright-report/
+/blob-report/
+/playwright/.cache/

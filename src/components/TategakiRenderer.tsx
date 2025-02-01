@@ -1,205 +1,158 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { Stage, Container, Text } from "@pixi/react";
-import { Application, TextStyle } from "pixi.js";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Slider } from "@/components/ui/slider";
+import React, { useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
+import { CreateDocumentUseCase } from "../application/useCases/CreateDocumentUseCase";
+import { ExportPageUseCase } from "../application/useCases/ExportPageUseCase";
+import { ExportAllPagesUseCase } from "../application/useCases/ExportAllPagesUseCase";
+import { SVGDocumentRepository } from "../infrastructure/repositories/SVGDocumentRepository";
+import { Document } from "../domain/entities/Document";
 
-const KINSOKU_START = "、。，．・：；？！ー）］｝〕〉》」』】｠〙〜";
-const KINSOKU_END = "（［｛〔〈《「『【｟〘";
+const VerticalTextApp = () => {
+  const [text, setText] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [document, setDocument] = useState<Document | null>(null);
+  const textRef = useRef(null);
 
-const FONTS = [
-  { name: "Noto Sans JP", value: "Noto Sans JP" },
-  { name: "Sawarabi Mincho", value: "Sawarabi Mincho" },
-  { name: "M PLUS Rounded 1c", value: "M PLUS Rounded 1c" },
-];
+  // Initialize use cases
+  const documentRepository = new SVGDocumentRepository();
+  const createDocument = new CreateDocumentUseCase(documentRepository);
+  const exportPage = new ExportPageUseCase(documentRepository);
+  const exportAllPages = new ExportAllPagesUseCase(documentRepository);
 
-function splitTextWithKinsoku(text: string, maxChars: number): string[] {
-  const result: string[] = [];
-  let currentLine = "";
-
-  for (let i = 0; i < text.length; i++) {
-    const char = text[i];
-
-    if (currentLine.length >= maxChars) {
-      while (
-        currentLine.length > 0 &&
-        KINSOKU_START.includes(currentLine[currentLine.length - 1])
-      ) {
-        const lastChar = currentLine[currentLine.length - 1];
-        currentLine = currentLine.slice(0, -1);
-        text = lastChar + text.slice(i);
-        i--;
-      }
-      result.push(currentLine);
-      currentLine = "";
-    }
-
-    if (currentLine.length === 0 && KINSOKU_END.includes(char)) {
-      if (result.length > 0) {
-        result[result.length - 1] += char;
-      } else {
-        currentLine += char;
-      }
-    } else {
-      currentLine += char;
-    }
-  }
-
-  if (currentLine.length > 0) {
-    result.push(currentLine);
-  }
-
-  return result;
-}
-
-export default function TategakiRenderer() {
-  const [text, setText] = useState("こんにちは、世界！\n改行のテストです。");
-  const [lines, setLines] = useState<string[]>([]);
-  const [font, setFont] = useState("Noto Sans JP");
-  const [fontSize, setFontSize] = useState(24);
-  const [charsPerLine, setCharsPerLine] = useState(15);
-  const [app, setApp] = useState<Application | null>(null);
-
-  useEffect(() => {
-    const input = document.getElementById("text-input") as HTMLTextAreaElement;
-    const button = document.querySelector("button");
-
-    const handleClick = () => {
-      setText(input.value);
-    };
-
-    button?.addEventListener("click", handleClick);
-
-    return () => {
-      button?.removeEventListener("click", handleClick);
-    };
-  }, []);
-
-  useEffect(() => {
-    const splitText = text
-      .split("\n")
-      .flatMap((line) => splitTextWithKinsoku(line, charsPerLine));
-    setLines(splitText);
-  }, [text, charsPerLine]);
-
-  const [fontStyle, setFontStyle] = useState(
-    new TextStyle({
-      fontFamily: font,
-      fontSize: fontSize,
-      fill: "#000000",
-      wordWrap: true,
-    }),
-  );
-
-  useEffect(() => {
-    setFontStyle(
-      new TextStyle({
-        fontFamily: font,
-        fontSize: fontSize,
-        fill: "#000000",
-        wordWrap: true,
-      }),
-    );
-  }, [font, fontSize]);
-
-  const handleDownload = () => {
-    if (app) {
-      const renderer = app.renderer as PIXI.Renderer;
-      const container = app.stage.children[0] as PIXI.Container;
-      const texture = renderer.generateTexture(container);
-      const canvas = renderer.extract.canvas(texture);
-      if (canvas) {
-        const dataURL = canvas.toDataURL("image/png");
-        const link = document.createElement("a");
-        link.download = "tategaki.png";
-        link.href = dataURL;
-        link.click();
-      } else {
-        console.error("Canvas extraction failed.");
-      }
+  const handleTextChange = async (
+    e: React.ChangeEvent<HTMLTextAreaElement>,
+  ) => {
+    const newText = e.target.value;
+    setText(newText);
+    try {
+      const newDocument = await createDocument.execute(newText);
+      setDocument(newDocument);
+    } catch (error) {
+      console.error("Error creating document:", error);
     }
   };
 
+  const handleDownloadCurrentPage = async () => {
+    if (!document) return;
+
+    const currentPageObj = document.getPage(currentPage);
+    if (!currentPageObj) return;
+
+    try {
+      const url = await exportPage.execute(currentPageObj);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `vertical-text-page-${currentPage}.svg`;
+      link.click();
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error("Error downloading page:", error);
+    }
+  };
+
+  const handleDownloadAllPages = async () => {
+    if (!document) return;
+
+    try {
+      const urls = await exportAllPages.execute(document);
+      urls.forEach((url, index) => {
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = `vertical-text-page-${index + 1}.svg`;
+        link.click();
+        URL.revokeObjectURL(url);
+      });
+    } catch (error) {
+      console.error("Error downloading all pages:", error);
+    }
+  };
+
+  const textStyle = {
+    writingMode: "vertical-rl" as const,
+    textOrientation: "mixed" as const,
+    fontFamily: '"Noto Serif JP", serif',
+    lineHeight: "1.7",
+    height: "800px",
+    width: "680px",
+  };
+
   return (
-    <div>
-      <div className="mb-4 space-y-2">
-        <Select onValueChange={setFont} defaultValue={font}>
-          <SelectTrigger className="w-[180px]">
-            <SelectValue placeholder="フォントを選択" />
-          </SelectTrigger>
-          <SelectContent>
-            {FONTS.map((font) => (
-              <SelectItem key={font.value} value={font.value}>
-                {font.name}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        <div>
-          <label
-            htmlFor="font-size"
-            className="block text-sm font-medium text-gray-700"
-          >
-            フォントサイズ: {fontSize}px
-          </label>
-          <Slider
-            id="font-size"
-            min={12}
-            max={48}
-            step={1}
-            value={[fontSize]}
-            onValueChange={(value) => setFontSize(value[0])}
+    <div className="max-w-4xl mx-auto p-6 space-y-6">
+      <div className="space-y-4">
+        <h1 className="text-2xl font-bold">縦書きテキストエディター</h1>
+        <div className="space-y-2">
+          <p className="text-sm text-gray-600">
+            ※ 1ページ20文字×20行（400文字）で表示します
+          </p>
+          <Textarea
+            value={text}
+            onChange={handleTextChange}
+            className="w-full h-32"
+            placeholder="テキストを入力してください"
           />
         </div>
-        <div>
-          <label
-            htmlFor="chars-per-line"
-            className="block text-sm font-medium text-gray-700"
+
+        <div className="flex justify-between items-center">
+          <Button
+            onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
+            disabled={currentPage === 1}
           >
-            1行あたりの文字数: {charsPerLine}
-          </label>
-          <Slider
-            id="chars-per-line"
-            min={5}
-            max={30}
-            step={1}
-            value={[charsPerLine]}
-            onValueChange={(value) => setCharsPerLine(value[0])}
-          />
+            前のページ
+          </Button>
+
+          <span className="text-sm">
+            {document
+              ? `${currentPage} / ${document.getTotalPages()}ページ`
+              : "0 / 0 ページ"}
+          </span>
+
+          <Button
+            onClick={() =>
+              setCurrentPage((prev) =>
+                Math.min(document?.getTotalPages() || 1, prev + 1),
+              )
+            }
+            disabled={!document || currentPage >= document.getTotalPages()}
+          >
+            次のページ
+          </Button>
         </div>
-        <Button onClick={handleDownload}>画像としてダウンロード</Button>
+
+        <div className="flex gap-4">
+          <Button
+            onClick={handleDownloadCurrentPage}
+            className="flex-1"
+            disabled={!document}
+          >
+            現在のページをダウンロード
+          </Button>
+
+          <Button
+            onClick={handleDownloadAllPages}
+            className="flex-1"
+            disabled={!document}
+          >
+            全ページをダウンロード
+          </Button>
+        </div>
       </div>
-      <Stage
-        width={400}
-        height={400}
-        options={{ backgroundColor: 0xffffff }}
-        onMount={(app) => setApp(app)}
+
+      <div
+        ref={textRef}
+        className="p-8 bg-white border rounded-lg shadow-sm mx-auto"
       >
-        <Container>
-          {lines.map((line, lineIndex) => (
-            <Container key={lineIndex} x={380 - lineIndex * (fontSize * 1.5)}>
-              {line.split("").map((char, charIndex) => (
-                <Text
-                  key={charIndex}
-                  text={char}
-                  x={0}
-                  y={20 + charIndex * (fontSize * 1.5)}
-                  style={fontStyle}
-                />
-              ))}
-            </Container>
-          ))}
-        </Container>
-      </Stage>
+        <div className="vertical-text text-xl" style={textStyle}>
+          {document?.getPage(currentPage)?.getContent() || ""}
+        </div>
+      </div>
+
+      <style jsx global>{`
+        @import url("https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@400;700&display=swap");
+      `}</style>
     </div>
   );
-}
+};
+
+export default VerticalTextApp;
