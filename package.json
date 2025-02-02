@@ -6,7 +6,8 @@
     "dev": "next dev --turbopack",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "test": "vitest"
   },
   "dependencies": {
     "@pixi/react": "7.1.2",
@@ -26,6 +27,7 @@
     "@eslint/eslintrc": "^3",
     "@playwright/test": "^1.50.1",
     "@testing-library/jest-dom": "^6.6.3",
+    "@testing-library/user-event": "^14.6.1",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",

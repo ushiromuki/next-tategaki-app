@@ -1,12 +1,16 @@
 import { Page } from "./Page";
+import { TextContent } from "../valueObject/TextContent";
 
 export class Document {
-  private readonly CHARS_PER_PAGE = 400;
+  private charsPerPage: number;
+  private charsPerLine: number;
   private pages: Page[];
   private content: TextContent;
 
-  constructor(content: TextContent) {
+  constructor(content: TextContent, charsPerPage = 400, charsPerLine = 20) {
     this.content = content;
+    this.charsPerPage = charsPerPage;
+    this.charsPerLine = charsPerLine;
     this.pages = this.splitIntoPages(content.getValue());
   }
 
@@ -17,7 +21,7 @@ export class Document {
     let charCount = 0;
 
     for (const char of text) {
-      if (charCount >= this.CHARS_PER_PAGE) {
+      if (charCount >= this.charsPerPage) {
         pages.push(new Page(currentPage, pageNumber));
         currentPage = "";
         charCount = 0;
@@ -25,7 +29,8 @@ export class Document {
       }
 
       if (char === "\n") {
-        const remainingInLine = 20 - (charCount % 20);
+        const remainingInLine =
+          this.charsPerLine - (charCount % this.charsPerLine);
         charCount += remainingInLine;
         currentPage += char;
         continue;

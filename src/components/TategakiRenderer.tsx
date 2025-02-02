@@ -3,16 +3,21 @@
 import React, { useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { CreateDocumentUseCase } from "../application/useCases/CreateDocumentUseCase";
-import { ExportPageUseCase } from "../application/useCases/ExportPageUseCase";
-import { ExportAllPagesUseCase } from "../application/useCases/ExportAllPagesUseCase";
+import { Slider } from "@/components/ui/slider";
+import { CreateDocumentUseCase } from "../application/usecases/CreateDocumentUseCase";
+import { ExportPageUseCase } from "../application/usecases/ExportPageUseCase";
+import { ExportAllPagesUseCase } from "../application/usecases/ExportAllPagesUseCase";
 import { SVGDocumentRepository } from "../infrastructure/repositories/SVGDocumentRepository";
 import { Document } from "../domain/entities/Document";
 
 const VerticalTextApp = () => {
-  const [text, setText] = useState("");
+  const [text, setText] = useState(
+    "これは縦書きeditorです。\n改行もできます。",
+  );
   const [currentPage, setCurrentPage] = useState(1);
-  const [document, setDocument] = useState<Document | null>(null);
+  const [documentX, setDocument] = useState<Document | null>(null);
+  const [charsPerPage, setCharsPerPage] = useState(400);
+  const [charsPerLine, setCharsPerLine] = useState(20);
   const textRef = useRef(null);
 
   // Initialize use cases
@@ -27,7 +32,12 @@ const VerticalTextApp = () => {
     const newText = e.target.value;
     setText(newText);
     try {
-      const newDocument = await createDocument.execute(newText);
+      // useCase を修正して、charsPerPage, charsPerLine を反映するようにする例です
+      const newDocument = await createDocument.execute(
+        newText,
+        charsPerPage,
+        charsPerLine,
+      );
       setDocument(newDocument);
     } catch (error) {
       console.error("Error creating document:", error);
@@ -35,9 +45,9 @@ const VerticalTextApp = () => {
   };
 
   const handleDownloadCurrentPage = async () => {
-    if (!document) return;
+    if (!documentX) return;
 
-    const currentPageObj = document.getPage(currentPage);
+    const currentPageObj = documentX.getPage(currentPage);
     if (!currentPageObj) return;
 
     try {
@@ -53,10 +63,10 @@ const VerticalTextApp = () => {
   };
 
   const handleDownloadAllPages = async () => {
-    if (!document) return;
+    if (!documentX) return;
 
     try {
-      const urls = await exportAllPages.execute(document);
+      const urls = await exportAllPages.execute(documentX);
       urls.forEach((url, index) => {
         const link = document.createElement("a");
         link.href = url;
@@ -74,6 +84,7 @@ const VerticalTextApp = () => {
     textOrientation: "mixed" as const,
     fontFamily: '"Noto Serif JP", serif',
     lineHeight: "1.7",
+    whiteSpace: "pre-wrap",
     height: "800px",
     width: "680px",
   };
@@ -84,8 +95,35 @@ const VerticalTextApp = () => {
         <h1 className="text-2xl font-bold">縦書きテキストエディター</h1>
         <div className="space-y-2">
           <p className="text-sm text-gray-600">
-            ※ 1ページ20文字×20行（400文字）で表示します
+            ※
+            １ページあたりの文字数と一行あたりの文字数をスライダーで設定できます
           </p>
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm mb-1">
+                １ページあたりの文字数: {charsPerPage}
+              </label>
+              <Slider
+                value={[charsPerPage]}
+                onValueChange={(vals: number[]) => setCharsPerPage(vals[0])}
+                min={100}
+                max={1000}
+                step={50}
+              />
+            </div>
+            <div>
+              <label className="block text-sm mb-1">
+                一行あたりの文字数: {charsPerLine}
+              </label>
+              <Slider
+                value={[charsPerLine]}
+                onValueChange={(vals: number[]) => setCharsPerLine(vals[0])}
+                min={5}
+                max={50}
+                step={1}
+              />
+            </div>
+          </div>
           <Textarea
             value={text}
             onChange={handleTextChange}
@@ -103,18 +141,18 @@ const VerticalTextApp = () => {
           </Button>
 
           <span className="text-sm">
-            {document
-              ? `${currentPage} / ${document.getTotalPages()}ページ`
+            {documentX
+              ? `${currentPage} / ${documentX.getTotalPages()}ページ`
               : "0 / 0 ページ"}
           </span>
 
           <Button
             onClick={() =>
               setCurrentPage((prev) =>
-                Math.min(document?.getTotalPages() || 1, prev + 1),
+                Math.min(documentX?.getTotalPages() || 1, prev + 1),
               )
             }
-            disabled={!document || currentPage >= document.getTotalPages()}
+            disabled={!documentX || currentPage >= documentX.getTotalPages()}
           >
             次のページ
           </Button>
@@ -124,7 +162,7 @@ const VerticalTextApp = () => {
           <Button
             onClick={handleDownloadCurrentPage}
             className="flex-1"
-            disabled={!document}
+            disabled={!documentX}
           >
             現在のページをダウンロード
           </Button>
@@ -132,7 +170,7 @@ const VerticalTextApp = () => {
           <Button
             onClick={handleDownloadAllPages}
             className="flex-1"
-            disabled={!document}
+            disabled={!documentX}
           >
             全ページをダウンロード
           </Button>
@@ -144,7 +182,7 @@ const VerticalTextApp = () => {
         className="p-8 bg-white border rounded-lg shadow-sm mx-auto"
       >
         <div className="vertical-text text-xl" style={textStyle}>
-          {document?.getPage(currentPage)?.getContent() || ""}
+          {documentX?.getPage(currentPage)?.getContent() || ""}
         </div>
       </div>
 
