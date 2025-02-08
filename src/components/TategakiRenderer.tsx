@@ -18,6 +18,7 @@ const VerticalTextApp = () => {
   const [documentX, setDocument] = useState<Document | null>(null);
   const [charsPerPage, setCharsPerPage] = useState(400);
   const [charsPerLine, setCharsPerLine] = useState(20);
+  const [fontSize, setFontSize] = useState(16); // Added font size state
   const textRef = useRef(null);
 
   // Initialize use cases
@@ -83,6 +84,7 @@ const VerticalTextApp = () => {
     writingMode: "vertical-rl" as const,
     textOrientation: "mixed" as const,
     fontFamily: '"Noto Serif JP", serif',
+    fontSize: `${fontSize}px`, // Apply font size
     lineHeight: "1.7",
     whiteSpace: "pre-wrap",
     height: "800px",
@@ -120,6 +122,18 @@ const VerticalTextApp = () => {
                 onValueChange={(vals: number[]) => setCharsPerLine(vals[0])}
                 min={5}
                 max={50}
+                step={1}
+              />
+            </div>
+            <div> {/* Added Font Size Slider */}
+              <label className="block text-sm mb-1">
+                フォントサイズ: {fontSize}px
+              </label>
+              <Slider
+                value={[fontSize]}
+                onValueChange={(vals: number[]) => setFontSize(vals[0])}
+                min={10}
+                max={30}
                 step={1}
               />
             </div>
