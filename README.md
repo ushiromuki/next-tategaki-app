@@ -1,36 +1,61 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Next.js 縦書きエディター
 
-## Getting Started
+このプロジェクトは、Next.js で構築された縦書きテキストエディターです。
 
-First, run the development server:
+## 機能
+
+- **縦書きテキスト編集**: テキストを縦書きで表示・編集できます。
+- **禁則処理**: 禁則処理に対応しており、自然な縦書きレイアウトを実現します。
+- **ページ分割**: 長文テキストを複数ページに分割して表示できます。
+- **文字数設定**: 1ページあたりの文字数や1行あたりの文字数を設定できます。
+- **フォント設定**: 複数のフォントから選択できます。
+- **ダウンロード**: 現在のページまたは全ページを画像としてダウンロードできます。
+- **ローカルストレージ**: 編集内容はローカルストレージに保存され、次回アクセス時に復元されます。
+
+## 技術スタック
+
+- **Next.js**: React ベースのフレームワーク
+- **TypeScript**: JavaScript のスーパーセット
+- **Tailwind CSS**: ユーティリティファーストの CSS フレームワーク
+- **@pixi/react**: PixiJS を React で扱うためのライブラリ
+- **Vitest**: テストフレームワーク
+
+## 開発環境
+
+- Node.js v18 以上
+- npm または yarn
+
+## 実行方法
+
+1. リポジトリをクローンします。
+2. 依存関係をインストールします。
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+   npm install
+   # または
+   yarn install
+   # または
+   pnpm install
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+3. 開発サーバーを起動します。
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```bash
+   npm run dev
+   # または
+   yarn dev
+   # または
+   pnpm run dev
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+4. ブラウザで http://localhost:3000 にアクセスします。
 
-## Learn More
+## テスト
 
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+```bash
+   npm run test
+   # または
+   yarn test
+   # または
+   pnpm run test
+```

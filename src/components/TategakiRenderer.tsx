@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, useMemo } from "react";
 import { useLocalStorage } from "../hooks/useLocalStorage";
 import { getRandomEmoji } from "../utils/emojis";
 import { Button } from "@/components/ui/button";
@@ -18,42 +18,64 @@ import { ExportAllPagesUseCase } from "../application/usecases/ExportAllPagesUse
 import { SVGDocumentRepository } from "../infrastructure/repositories/SVGDocumentRepository";
 import { Document } from "../domain/entities/Document";
 
-const kinsokuStart = '、。，．・：；？！ヽヾゝゞ々ー）〕］｝〉》」』】」゛゜ぁぃぅぇぉっゃゅょゎァィゥェォッャュョヮヵヶ';
-const kinsokuEnd = '（〔［｛〈《「『【「';
+const kinsokuStart =
+  "、。，．・：；？！ヽヾゝゞ々ー）〕］｝〉》」』】」゛゜ぁぃぅぇぉっゃゅょゎァィゥェォッャュョヮヵヶ";
+const kinsokuEnd = "（〔［｛〈《「『【「";
 
 const processKinsoku = (text: string, charsPerLine: number) => {
-  const lines = text.split('\n');
-  return lines.map(line => {
-    let result = '';
-    let currentLine = '';
+  const lines = text.split("\n");
+  return lines
+    .map((line) => {
+      let result = "";
+      let currentLine = "";
 
-    for (let i = 0; i < line.length; i++) {
-      const char = line[i];
-      const nextChar = line[i + 1];
+      for (let i = 0; i < line.length; i++) {
+        const char = line[i];
+        const nextChar = line[i + 1];
 
-      currentLine += char;
+        currentLine += char;
 
-      if (currentLine.length === charsPerLine) {
-        if (nextChar && kinsokuStart.includes(nextChar)) {
-          currentLine += nextChar;
-          i++;
+        if (currentLine.length === charsPerLine) {
+          if (nextChar && kinsokuStart.includes(nextChar)) {
+            currentLine += nextChar;
+            i++;
+          } else if (i > 0 && kinsokuEnd.includes(char)) {
+            // 文末が禁則文字の場合、前の行に移動
+            if (result.length > 0) {
+              const lastLineBreak = result.lastIndexOf("\n");
+              if (lastLineBreak > -1) {
+                result =
+                  result.substring(0, lastLineBreak) +
+                  char +
+                  "\n" +
+                  result.substring(lastLineBreak + 1);
+              } else {
+                result = char + "\n" + result;
+              }
+              currentLine = "";
+            }
+          } else {
+            result += currentLine + "\n";
+            currentLine = "";
+          }
         }
-        result += currentLine + '\n';
-        currentLine = '';
       }
-    }
 
-    if (currentLine) {
-      result += currentLine;
-    }
+      if (currentLine) {
+        result += currentLine;
+      }
 
-    return result;
-  }).join('\n');
+      return result;
+    })
+    .join("\n");
 };
 
 const VerticalTextApp = () => {
-  const [username] = useLocalStorage('username', `${getRandomEmoji()}さん`);
-  const [savedText, setSavedText] = useLocalStorage('editContent', "これは縦書きeditorです。\n改行もできます。");
+  const [username] = useLocalStorage("username", `${getRandomEmoji()}さん`);
+  const [savedText, setSavedText] = useLocalStorage(
+    "editContent",
+    "これは縦書きeditorです。\n改行もできます。",
+  );
   const [text, setText] = useState(savedText);
   const [currentPage, setCurrentPage] = useState(1);
   const [isWelcomeOpen, setIsWelcomeOpen] = useState(true);
@@ -63,26 +85,38 @@ const VerticalTextApp = () => {
   }, [text, setSavedText]);
 
   const [documentX, setDocument] = useState<Document | null>(null);
-  const [charsPerPage, setCharsPerPage] = useLocalStorage('charsPerPage', 400);
-  const [charsPerLine, setCharsPerLine] = useLocalStorage('charsPerLine', 20);
-  const [fontSize, setFontSize] = useLocalStorage('fontSize', 16);
-  const [fontFamily, setFontFamily] = useLocalStorage('fontFamily', '"Noto Serif JP", serif');
+  const [charsPerPage, setCharsPerPage] = useLocalStorage("charsPerPage", 400);
+  const [charsPerLine, setCharsPerLine] = useLocalStorage("charsPerLine", 20);
+  const [fontSize, setFontSize] = useLocalStorage("fontSize", 16);
+  const [fontFamily, setFontFamily] = useLocalStorage(
+    "fontFamily",
+    '"Noto Serif JP", serif',
+  );
   const textRef = useRef(null);
 
   const fontOptions = [
-    { label: '源ノ明朝', value: '"Noto Serif JP", serif' },
-    { label: 'さわらび明朝', value: '"Sawarabi Mincho", serif' },
-    { label: '源ノ角ゴシック', value: '"Noto Sans JP", sans-serif' },
-    { label: 'M PLUS Rounded 1c', value: '"M PLUS Rounded 1c", sans-serif' },
-    { label: '禅アンティーク', value: '"Zen Antique", serif' },
-    { label: '游明朝体', value: '"Yuji Mincho", serif' },
+    { label: "源ノ明朝", value: '"Noto Serif JP", serif' },
+    { label: "さわらび明朝", value: '"Sawarabi Mincho", serif' },
+    { label: "源ノ角ゴシック", value: '"Noto Sans JP", sans-serif' },
+    { label: "M PLUS Rounded 1c", value: '"M PLUS Rounded 1c", sans-serif' },
+    { label: "禅アンティーク", value: '"Zen Antique", serif' },
+    { label: "游明朝体", value: '"Yuji Mincho", serif' },
   ];
 
   // Initialize use cases
-  const documentRepository = new SVGDocumentRepository();
-  const createDocument = new CreateDocumentUseCase(documentRepository);
-  const exportPage = new ExportPageUseCase(documentRepository);
-  const exportAllPages = new ExportAllPagesUseCase(documentRepository);
+  const documentRepository = useMemo(() => new SVGDocumentRepository(), []);
+  const createDocument = useMemo(
+    () => new CreateDocumentUseCase(documentRepository),
+    [documentRepository],
+  );
+  const exportPage = useMemo(
+    () => new ExportPageUseCase(documentRepository),
+    [documentRepository],
+  );
+  const exportAllPages = useMemo(
+    () => new ExportAllPagesUseCase(documentRepository),
+    [documentRepository],
+  );
 
   const handleTextChange = async (
     e: React.ChangeEvent<HTMLTextAreaElement>,
@@ -151,9 +185,10 @@ const VerticalTextApp = () => {
 
   useEffect(() => {
     const processedText = processKinsoku(text, charsPerLine);
-    createDocument.execute(processedText, charsPerPage, charsPerLine)
-      .then(newDocument => setDocument(newDocument))
-      .catch(error => console.error("Error creating document:", error));
+    createDocument
+      .execute(processedText, charsPerPage, charsPerLine)
+      .then((newDocument) => setDocument(newDocument))
+      .catch((error) => console.error("Error creating document:", error));
   }, [text, charsPerPage, charsPerLine, createDocument]);
 
   useEffect(() => {
@@ -210,10 +245,11 @@ const VerticalTextApp = () => {
               />
             </div>
             <div>
-              <label className="block text-sm mb-1">
-                フォント:
-              </label>
-              <select value={fontFamily} onChange={(e) => setFontFamily(e.target.value)}>
+              <label className="block text-sm mb-1">フォント:</label>
+              <select
+                value={fontFamily}
+                onChange={(e) => setFontFamily(e.target.value)}
+              >
                 {fontOptions.map((option) => (
                   <option key={option.value} value={option.value}>
                     {option.label}
@@ -289,7 +325,12 @@ const VerticalTextApp = () => {
           <DialogHeader>
             <DialogTitle className="text-center text-2xl">
               ようこそ！
-              <Button onClick={() => setIsWelcomeOpen(false)} className="absolute top-2 right-2">閉じる</Button>
+              <Button
+                onClick={() => setIsWelcomeOpen(false)}
+                className="absolute top-2 right-2"
+              >
+                閉じる
+              </Button>
             </DialogTitle>
           </DialogHeader>
           <div className="text-center py-4">
@@ -301,12 +342,11 @@ const VerticalTextApp = () => {
 
       <style jsx global>{`
         @import url("https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@400;700&display=swap");
-        @import url('https://fonts.googleapis.com/css2?family=Sawarabi+Mincho&display=swap');
-        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700&display=swap');
-        @import url('https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c&display=swap');
-        @import url('https://fonts.googleapis.com/css2?family=Zen+Antique&display=swap');
-        @import url('https://fonts.googleapis.com/css2?family=Yuji+Mincho&display=swap');
-
+        @import url("https://fonts.googleapis.com/css2?family=Sawarabi+Mincho&display=swap");
+        @import url("https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700&display=swap");
+        @import url("https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c&display=swap");
+        @import url("https://fonts.googleapis.com/css2?family=Zen+Antique&display=swap");
+        @import url("https://fonts.googleapis.com/css2?family=Yuji+Mincho&display=swap");
       `}</style>
     </div>
   );
