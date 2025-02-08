@@ -17,7 +17,7 @@ export default function RootLayout({
     <html lang="ja">
       <head>
         <link
-          href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP&family=Sawarabi+Mincho&family=M+PLUS+Rounded+1c&display=swap"
+          href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP&family=Noto+Serif+JP&family=Sawarabi+Mincho&family=M+PLUS+Rounded+1c&family=Zen+Antique&family=Yuji+Mincho&display=swap"
           rel="stylesheet"
         />
       </head>

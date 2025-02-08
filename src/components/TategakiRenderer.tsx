@@ -20,13 +20,13 @@ const processKinsoku = (text: string, charsPerLine: number) => {
   return lines.map(line => {
     let result = '';
     let currentLine = '';
-    
+
     for (let i = 0; i < line.length; i++) {
       const char = line[i];
       const nextChar = line[i + 1];
-      
+
       currentLine += char;
-      
+
       if (currentLine.length === charsPerLine) {
         if (nextChar && kinsokuStart.includes(nextChar)) {
           currentLine += nextChar;
@@ -36,11 +36,11 @@ const processKinsoku = (text: string, charsPerLine: number) => {
         currentLine = '';
       }
     }
-    
+
     if (currentLine) {
       result += currentLine;
     }
-    
+
     return result;
   }).join('\n');
 };
@@ -50,19 +50,29 @@ const VerticalTextApp = () => {
   const [savedText, setSavedText] = useLocalStorage('editContent', "これは縦書きeditorです。\n改行もできます。");
   const [text, setText] = useState(savedText);
   const [currentPage, setCurrentPage] = useState(1);
-  
+
   useEffect(() => {
     setSavedText(text);
   }, [text, setSavedText]);
-  
+
   useEffect(() => {
     alert(`こんにちは、${username}！`);
   }, []);
   const [documentX, setDocument] = useState<Document | null>(null);
   const [charsPerPage, setCharsPerPage] = useState(400);
   const [charsPerLine, setCharsPerLine] = useState(20);
-  const [fontSize, setFontSize] = useState(16); // Added font size state
+  const [fontSize, setFontSize] = useState(16);
+  const [fontFamily, setFontFamily] = useState('"Noto Serif JP", serif');
   const textRef = useRef(null);
+
+  const fontOptions = [
+    { label: '源ノ明朝', value: '"Noto Serif JP", serif' },
+    { label: 'さわらび明朝', value: '"Sawarabi Mincho", serif' },
+    { label: '源ノ角ゴシック', value: '"Noto Sans JP", sans-serif' },
+    { label: 'M PLUS Rounded 1c', value: '"M PLUS Rounded 1c", sans-serif' },
+    { label: '禅アンティーク', value: '"Zen Antique", serif' },
+    { label: '游明朝体', value: '"Yuji Mincho", serif' },
+  ];
 
   // Initialize use cases
   const documentRepository = new SVGDocumentRepository();
@@ -127,7 +137,7 @@ const VerticalTextApp = () => {
   const textStyle = {
     writingMode: "vertical-rl" as const,
     textOrientation: "mixed" as const,
-    fontFamily: '"Noto Serif JP", serif',
+    fontFamily: fontFamily,
     fontSize: `${fontSize}px`,
     lineHeight: "1.7",
     whiteSpace: "pre-wrap",
@@ -176,7 +186,7 @@ const VerticalTextApp = () => {
                 step={1}
               />
             </div>
-            <div> {/* Added Font Size Slider */}
+            <div>
               <label className="block text-sm mb-1">
                 フォントサイズ: {fontSize}px
               </label>
@@ -187,6 +197,18 @@ const VerticalTextApp = () => {
                 max={30}
                 step={1}
               />
+            </div>
+            <div>
+              <label className="block text-sm mb-1">
+                フォント:
+              </label>
+              <select value={fontFamily} onChange={(e) => setFontFamily(e.target.value)}>
+                {fontOptions.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
             </div>
           </div>
           <Textarea
@@ -253,6 +275,12 @@ const VerticalTextApp = () => {
 
       <style jsx global>{`
         @import url("https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@400;700&display=swap");
+        @import url('https://fonts.googleapis.com/css2?family=Sawarabi+Mincho&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Zen+Antique&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Yuji+Mincho&display=swap');
+
       `}</style>
     </div>
   );
