@@ -128,12 +128,19 @@ const VerticalTextApp = () => {
     writingMode: "vertical-rl" as const,
     textOrientation: "mixed" as const,
     fontFamily: '"Noto Serif JP", serif',
-    fontSize: `${fontSize}px`, // Apply font size
+    fontSize: `${fontSize}px`,
     lineHeight: "1.7",
     whiteSpace: "pre-wrap",
-    height: "800px",
+    height: `${charsPerLine * (fontSize * 1.7)}px`,
     width: "680px",
   };
+
+  useEffect(() => {
+    const processedText = processKinsoku(text, charsPerLine);
+    createDocument.execute(processedText, charsPerPage, charsPerLine)
+      .then(newDocument => setDocument(newDocument))
+      .catch(error => console.error("Error creating document:", error));
+  }, [text, charsPerPage, charsPerLine, createDocument]);
 
   return (
     <div className="max-w-4xl mx-auto p-6 space-y-6">
