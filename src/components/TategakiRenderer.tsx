@@ -10,11 +10,52 @@ import { ExportAllPagesUseCase } from "../application/usecases/ExportAllPagesUse
 import { SVGDocumentRepository } from "../infrastructure/repositories/SVGDocumentRepository";
 import { Document } from "../domain/entities/Document";
 
+const kinsokuStart = '、。，．・：；？！ヽヾゝゞ々ー）〕］｝〉》」』】」゛゜ぁぃぅぇぉっゃゅょゎァィゥェォッャュョヮヵヶ';
+const kinsokuEnd = '（〔［｛〈《「『【「';
+
+const processKinsoku = (text: string, charsPerLine: number) => {
+  const lines = text.split('\n');
+  return lines.map(line => {
+    let result = '';
+    let currentLine = '';
+    
+    for (let i = 0; i < line.length; i++) {
+      const char = line[i];
+      const nextChar = line[i + 1];
+      
+      currentLine += char;
+      
+      if (currentLine.length === charsPerLine) {
+        if (nextChar && kinsokuStart.includes(nextChar)) {
+          currentLine += nextChar;
+          i++;
+        }
+        result += currentLine + '\n';
+        currentLine = '';
+      }
+    }
+    
+    if (currentLine) {
+      result += currentLine;
+    }
+    
+    return result;
+  }).join('\n');
+};
+
 const VerticalTextApp = () => {
-  const [text, setText] = useState(
-    "これは縦書きeditorです。\n改行もできます。",
-  );
+  const [username] = useLocalStorage('username', `${getRandomEmoji()}さん`);
+  const [savedText, setSavedText] = useLocalStorage('editContent', "これは縦書きeditorです。\n改行もできます。");
+  const [text, setText] = useState(savedText);
   const [currentPage, setCurrentPage] = useState(1);
+  
+  useEffect(() => {
+    setSavedText(text);
+  }, [text, setSavedText]);
+  
+  useEffect(() => {
+    alert(`こんにちは、${username}！`);
+  }, []);
   const [documentX, setDocument] = useState<Document | null>(null);
   const [charsPerPage, setCharsPerPage] = useState(400);
   const [charsPerLine, setCharsPerLine] = useState(20);
@@ -34,8 +75,9 @@ const VerticalTextApp = () => {
     setText(newText);
     try {
       // useCase を修正して、charsPerPage, charsPerLine を反映するようにする例です
+      const processedText = processKinsoku(newText, charsPerLine);
       const newDocument = await createDocument.execute(
-        newText,
+        processedText,
         charsPerPage,
         charsPerLine,
       );
