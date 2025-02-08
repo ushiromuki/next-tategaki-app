@@ -6,6 +6,12 @@ import { getRandomEmoji } from "../utils/emojis";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Slider } from "@/components/ui/slider";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { CreateDocumentUseCase } from "../application/usecases/CreateDocumentUseCase";
 import { ExportPageUseCase } from "../application/usecases/ExportPageUseCase";
 import { ExportAllPagesUseCase } from "../application/usecases/ExportAllPagesUseCase";
@@ -50,19 +56,17 @@ const VerticalTextApp = () => {
   const [savedText, setSavedText] = useLocalStorage('editContent', "これは縦書きeditorです。\n改行もできます。");
   const [text, setText] = useState(savedText);
   const [currentPage, setCurrentPage] = useState(1);
+  const [isWelcomeOpen, setIsWelcomeOpen] = useState(true);
 
   useEffect(() => {
     setSavedText(text);
   }, [text, setSavedText]);
 
-  useEffect(() => {
-    alert(`こんにちは、${username}！`);
-  }, []);
   const [documentX, setDocument] = useState<Document | null>(null);
-  const [charsPerPage, setCharsPerPage] = useState(400);
-  const [charsPerLine, setCharsPerLine] = useState(20);
-  const [fontSize, setFontSize] = useState(16);
-  const [fontFamily, setFontFamily] = useState('"Noto Serif JP", serif');
+  const [charsPerPage, setCharsPerPage] = useLocalStorage('charsPerPage', 400);
+  const [charsPerLine, setCharsPerLine] = useLocalStorage('charsPerLine', 20);
+  const [fontSize, setFontSize] = useLocalStorage('fontSize', 16);
+  const [fontFamily, setFontFamily] = useLocalStorage('fontFamily', '"Noto Serif JP", serif');
   const textRef = useRef(null);
 
   const fontOptions = [
@@ -272,6 +276,20 @@ const VerticalTextApp = () => {
           {documentX?.getPage(currentPage)?.getContent() || ""}
         </div>
       </div>
+
+      <Dialog open={isWelcomeOpen} onOpenChange={setIsWelcomeOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="text-center text-2xl">
+              ようこそ！
+            </DialogTitle>
+          </DialogHeader>
+          <div className="text-center py-4">
+            <p className="text-xl">こんにちは、{username}！</p>
+            <p className="mt-2">縦書きエディターへようこそ</p>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       <style jsx global>{`
         @import url("https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@400;700&display=swap");
