@@ -156,6 +156,13 @@ const VerticalTextApp = () => {
       .catch(error => console.error("Error creating document:", error));
   }, [text, charsPerPage, charsPerLine, createDocument]);
 
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setIsWelcomeOpen(false);
+    }, 1000);
+    return () => clearTimeout(timer);
+  }, []);
+
   return (
     <div className="max-w-4xl mx-auto p-6 space-y-6">
       <div className="space-y-4">
@@ -282,6 +289,7 @@ const VerticalTextApp = () => {
           <DialogHeader>
             <DialogTitle className="text-center text-2xl">
               ようこそ！
+              <Button onClick={() => setIsWelcomeOpen(false)} className="absolute top-2 right-2">閉じる</Button>
             </DialogTitle>
           </DialogHeader>
           <div className="text-center py-4">
